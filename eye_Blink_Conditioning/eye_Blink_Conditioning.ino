@@ -210,8 +210,8 @@ void loop()
             Serial.print("@");
             Serial.print("Trial No. ");
             Serial.print("1"); // Just to not confuse data saving
-            Serial.print(" :");
-            Serial.println(" CS+ ");
+            Serial.print(" : ");
+            Serial.println(" CS+");
             
             // Get traceTime based on the Session Type
             if (sessionType_ind == 2)
