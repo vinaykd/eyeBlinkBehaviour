@@ -207,7 +207,7 @@ void loop()
             Serial.print(session);
             Serial.print(": ");
             Serial.println(sessionType[sessionType_ind]);
-            Serial.println("@");
+            Serial.print("@");
             Serial.print("Trial No. ");
             Serial.print("1"); // Just to not confuse data saving
             Serial.print(" :");
@@ -394,7 +394,7 @@ void loop()
                             else
                             {
                                 condition = 0;
-                                Serial.println("@");
+                                Serial.print("@");
                                 
                                 if (random(10) >= 6)
                                 {

@@ -10,6 +10,7 @@
 #  Copyright    2015 Kambadur Ananthamurthy
 #  License  <#license#>
 #
+
 """ Flow
 
 0. Connect to a serial port, given or search.
@@ -34,6 +35,7 @@ from collections import defaultdict
 import datetime
 import warnings
 import argparse
+import re
 
 import logging
 logging.basicConfig(level=logging.DEBUG,
@@ -41,6 +43,30 @@ logging.basicConfig(level=logging.DEBUG,
     datefmt='%m-%d %H:%M',
     filename='eye_blink.log',
     filemode='w')
+
+# Global argument.
+args_ = {}
+
+class ExpState():
+
+    def __init__(self):
+        self.mouseName = None
+        self.session = []
+        self.sessionNo = None
+        self.state = None
+        self.trialNo = None
+    
+    def current_state(self):
+        """get the current state"""
+        if self.mouseName and self.session:
+            self.state = "WAITING_FOR_DATA"
+        elif self.mouseName:
+            self.state = "WAITING_FOR_SESSION_INFO"
+        else:
+            self.state = "WAITING_FOR_MOUSE_INFO"
+        return self.state
+
+exp_ = ExpState()
 
 # define a Handler which writes INFO messages or higher to the sys.stderr
 console = logging.StreamHandler()
@@ -60,6 +86,15 @@ TRIAL_DATA_MARKER = "@"
 PROFILING_DATA_MARKER = "$"
 START_OF_SESSION_MARKER = "<"
 END_OF_SESSION_MARKER = ">"
+
+def inform_user(msg):
+    info = None
+    if type(msg) == list:
+        info = "[INFO] %s" % "\n\t|-".join(msg)
+    else:
+        info = "[INFO] %s" % msg
+    print(info)
+
 
 def get_default_ports():
     import platform
@@ -86,8 +121,12 @@ def getSerialPort(portPath, baudRate = 9600, timeout = 1):
         try:
             serialPort = serial.Serial(ports[i], baudRate, timeout =0.5)
             break
-        except:
-            continue
+        except Exception as e:
+            if "resource busy" in e.message:
+                inform_user(["Port %s is read by some other process" % ports[i]
+                    , "Close it and try again."])
+            else:
+                pass
 
     if not serialPort:
         print("[ERROR] I could not connect. Tried: %s" % ports)
@@ -166,24 +205,36 @@ def writeData(serialPort, saveDirec, trialsDict, profilingDict):
         else:
             print("B %s" % arduinoData)
 
-def inform_user(msg):
-    info = None
-    if type(msg) == list:
-        info = "[INFO] %s" % "\n\t|-".join(msg)
-    else:
-        info = "[INFO] %s" % msg
-    print(info)
-
-def process_data(port, args, **kwargs):
+def process_data(port, **kwargs):
+    global args_
+    global exp_
     while True:
-        line = port.readline()
-        if not line.strip():
+        line = port.readline().strip()
+        if not line:
             continue
-        print(line)
+        mousePat = re.compile(r'Mouse(?P<name>\w\d)')
+        sesPat = re.compile(r'Session(?P<sno>\d+)\:\s*(?P<stype>(Cntrl|Delay|Trace))')
+        if exp_.current_state() == "WAITING_FOR_MOUSE_INFO":
+            m = mousePat.search(line)
+            if m:
+                exp_.mouseName = m.group('name')
+                inform_user("Got mouse : %s" % exp_.mouseName)
+        elif exp_.current_state() == "WAITING_FOR_SESSION_INFO":
+            m = sesPat.search(line)
+            if m:
+                exp_.session = [m.group('sno'), m.group('stype')]
+                inform_user("Session: %s" % exp_.session)
+        elif exp_.current_state() == "WAITING_FOR_DATA":
+            print(line)
+        else:
+            print("[TODO] Fix me here")
 
-def write_data( serial_port, args ):
+
+
+def write_data( serial_port):
     """Main function responsible for writing data.
     """
+    global args__
     line = serial_port.readline()
     userInformed = False
     while True:
@@ -197,35 +248,33 @@ def write_data( serial_port, args ):
                 print(".", end='')
                 sys.stdout.flush()
         else:
-            process_data(serial_port, args)
+            process_data(serial_port)
 
-def main(args):
-    serialPort = getSerialPort( args.port )
+def init_storage():
+    """
+    Initialize the data-directory
+    """
+    global args_
+    inform_user([ "Initializing storage " ])
+    outdir = args_.get('outdir', os.getcwd())
+    stamp = datetime.datetime.now().strftime("%Y%m%d")
+    dataDir = os.path.join(outdir, stamp)
+    if not os.path.isdir(dataDir):
+        _logger.info("Creating directory %s" % dataDir)
+        os.makedirs(dataDir)
+    else:
+        inform_user("Directory %s already exists. Using it" % dataDir)
+    args_['data_dir'] = dataDir
+
+def main():
+    global args_
+    init_storage()
+    serialPort = getSerialPort( args_['port'] )
     try:
-        write_data(serialPort, args)
+        write_data(serialPort)
     except KeyboardInterrupt as e:
         print("Recieved interrupt from keyboard. Closing port")
         serialPort.close()
-
-    #if len(sys.argv) <= 1:
-    #    outfile = os.path.join( timeStamp
-    #                           , "raw_data")
-    #else:
-    #    outfile = "MouseK" + sys.argv[1] + "_SessionType" + sys.argv[2] + "_Session" + sys.argv[3]
-
-    #saveDirec = os.path.join("/tmp", outfile)
-    #if not os.path.exists(saveDirec):
-    #    os.makedirs(saveDirec)
-    #saveDirec = os.path.join(saveDirec, timeStamp)
-
-    #os.mkdir(saveDirec) #does not mkdir recursively
-
-    #trialsDict = defaultdict(list)
-    #profilingDict = {}
-    #print ("[INFO] Saving data to " + saveDirec)
-    #writeData(serialPort, saveDirec, trialsDict, profilingDict)
-    #print("[INFO] The session is complete and will now terminate")
-    #serialPort.close()
 
 if __name__ == "__main__":
     import argparse
@@ -259,5 +308,6 @@ if __name__ == "__main__":
     class Args: pass 
     args = Args()
     parser.parse_args(namespace=args)
-    main(args)
+    args_ = vars(args)
+    main()
 

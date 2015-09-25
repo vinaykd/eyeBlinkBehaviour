@@ -51,6 +51,9 @@
 void detectBlinks()
 {
     blink = analogRead(blink_ai);
+    unsigned long t = millis();
+    Serial.print(t);
+    Serial.print(",");
     Serial.println(blink);
     blinkCount++;
 }
