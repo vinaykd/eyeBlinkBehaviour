@@ -185,6 +185,7 @@ def process_data(port, **kwargs):
     global args_, exp_
     while True:
         line = port.readline().strip()
+        write_raw_data(line)
         exp_.insert_line(line)
 
 def write_data( serial_port):
@@ -233,7 +234,6 @@ def write_raw_data(line):
 
 def main():
     global args_
-    global raw_data_
     init_storage()
     serialPort = get_serial_port( args_['port'] )
     try:
