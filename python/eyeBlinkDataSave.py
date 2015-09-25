@@ -102,9 +102,9 @@ class ExpState():
                 # In lieu of current line, add a header to csv file. We need to
                 # write all data starting next line on. We achieve this by
                 # setting the sate value after writing this line.
-                write_to_trial_file("timestamp,data\n")
+                self.write_to_trial_file("timestamp,data\n")
                 if self.state == 30:
-                    write_to_trial_file(line)
+                    self.write_to_trial_file(line)
                 self.state = 30
 
         if self.get_state() == "WAITING_FOR_TRIAL_END":
