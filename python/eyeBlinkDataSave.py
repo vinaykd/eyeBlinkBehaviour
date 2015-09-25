@@ -10,6 +10,19 @@
 #  Copyright    2015 Kambadur Ananthamurthy
 #  License  <#license#>
 #
+""" Flow
+
+0. Connect to a serial port, given or search.
+1. Ask user for 3 inputs:
+    mouse-number : int
+    session-type : int (0, 1, or 2)
+    session-number : any positive integer.
+
+2. Wait till user press start on board.
+3. Dump data into given outfile (generated using mouse-number
+, session-type and session-number).
+
+"""
 
 from __future__ import print_function
 
@@ -20,6 +33,25 @@ import serial
 from collections import defaultdict
 import datetime
 import warnings
+import argparse
+
+import logging
+logging.basicConfig(level=logging.DEBUG,
+    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+    datefmt='%m-%d %H:%M',
+    filename='eye_blink.log',
+    filemode='w')
+
+# define a Handler which writes INFO messages or higher to the sys.stderr
+console = logging.StreamHandler()
+console.setLevel(logging.INFO)
+# set a format which is simpler for console use
+formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+# tell the handler to use this format
+console.setFormatter(formatter)
+# add the handler to the root logger
+_logger = logging.getLogger('')
+_logger.addHandler(console)
 
 DATA_BEGIN_MARKER = "["
 DATA_END_MARKER = "]"
@@ -29,21 +61,38 @@ PROFILING_DATA_MARKER = "$"
 START_OF_SESSION_MARKER = "<"
 END_OF_SESSION_MARKER = ">"
 
-def getSerialPort(portPath = None, baudRate = 9600, timeout = 1):
+def get_default_ports():
+    import platform
+    pName = platform.system()
+    if 'Linux' in pName:
+        ports = [ "/dev/ttyACM%s" % x for x in range(5) ]
+    else:
+        print("[WARN] Not implemented for os type: %s" % pName)
+        print("[INFO] Kindly pass the port path using --port option")
+        quit()
+    return ports
+
+def getSerialPort(portPath, baudRate = 9600, timeout = 1):
+    """If portPath is given, connet to it. Else try few default ports"""
     ports = [ ]
     if not portPath:
-        ports = [ "/dev/ttyACM%s" % x for x in range(5) ]
+        ports = get_default_ports()
     else:
         ports = [ portPath ]
 
     serialPort = None
-    while not serialPort:
-        print("[INFO] Trying to connect to %s" % ports[-1])
+    for i, p in enumerate(ports):
+        print("[INFO] Trying to connect to %s" % ports[i])
         try:
-            serialPort = serial.Serial(ports.pop(), baudRate, timeout =0.5)
+            serialPort = serial.Serial(ports[i], baudRate, timeout =0.5)
+            break
         except:
             continue
-    
+
+    if not serialPort:
+        print("[ERROR] I could not connect. Tried: %s" % ports)
+        quit()
+
     print("[INFO] Connected to %s" % serialPort)
     return serialPort
 
@@ -117,8 +166,9 @@ def writeData(serialPort, saveDirec, trialsDict, profilingDict):
         else:
             print("B %s" % arduinoData)
 
-def main():
-    serialPort = getSerialPort( )
+def main(args):
+    serialPort = getSerialPort( args.port )
+    quit()
     serialPort.write(sys.argv[1])
     serialPort.write(sys.argv[2])
     serialPort.write(sys.argv[3])
@@ -144,4 +194,35 @@ def main():
     serialPort.close()
 
 if __name__ == "__main__":
-    main()
+    import argparse
+    # Argument parser.
+    description = '''Eye blink behaviour'''
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument('--port', '-p'
+        , required = False
+        , help = 'Name of the serial port'
+        )
+    parser.add_argument('--outdir', '-d'
+        , required = False
+        , default = os.getcwd()
+        , help = 'Path to directory for storing data, default = pwd'
+        )
+    parser.add_argument('--name', '-n'
+        , required = True
+        , type = int
+        , help = 'Mouse index/name. Type int.'
+        )
+    parser.add_argument('--session_type', '-st'
+        , required = True
+        , type = int
+        , help = 'Session type. 0, 1 or 2'
+        )
+    parser.add_argument('--session_no', '-sn'
+        , required = True
+        , type = int
+        , help = 'Session no.'
+        )
+    class Args: pass 
+    args = Args()
+    parser.parse_args(namespace=args)
+    main(args)
