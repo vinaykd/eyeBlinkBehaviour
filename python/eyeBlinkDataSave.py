@@ -174,6 +174,12 @@ def inform_user(msg):
         info = "[INFO] %s" % msg
     print(info)
 
+def process_data(port, args, **kwargs):
+    while True:
+        line = port.readline()
+        if not line.strip():
+            continue
+        print(line)
 
 def write_data( serial_port, args ):
     """Main function responsible for writing data.
@@ -190,12 +196,17 @@ def write_data( serial_port, args ):
             else:
                 print(".", end='')
                 sys.stdout.flush()
-
+        else:
+            process_data(serial_port, args)
 
 def main(args):
     serialPort = getSerialPort( args.port )
-    write_data(serialPort, args)
-    serialPort.close()
+    try:
+        write_data(serialPort, args)
+    except KeyboardInterrupt as e:
+        print("Recieved interrupt from keyboard. Closing port")
+        serialPort.close()
+
     #if len(sys.argv) <= 1:
     #    outfile = os.path.join( timeStamp
     #                           , "raw_data")
@@ -249,3 +260,4 @@ if __name__ == "__main__":
     args = Args()
     parser.parse_args(namespace=args)
     main(args)
+
