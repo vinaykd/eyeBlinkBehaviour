@@ -166,32 +166,55 @@ def writeData(serialPort, saveDirec, trialsDict, profilingDict):
         else:
             print("B %s" % arduinoData)
 
+def inform_user(msg):
+    info = None
+    if type(msg) == list:
+        info = "[INFO] %s" % "\n\t|-".join(msg)
+    else:
+        info = "[INFO] %s" % msg
+    print(info)
+
+
+def write_data( serial_port, args ):
+    """Main function responsible for writing data.
+    """
+    line = serial_port.readline()
+    userInformed = False
+    while True:
+        line = serial_port.readline()
+        if not line.strip():
+            if not userInformed:
+                userInformed = True
+                msg = ["Waiting for trial to start.", "Press SELECT on board" ]
+                inform_user(msg)
+            else:
+                print(".", end='')
+                sys.stdout.flush()
+
+
 def main(args):
     serialPort = getSerialPort( args.port )
-    quit()
-    serialPort.write(sys.argv[1])
-    serialPort.write(sys.argv[2])
-    serialPort.write(sys.argv[3])
-    timeStamp = datetime.datetime.now().isoformat()
-    if len(sys.argv) <= 1:
-        outfile = os.path.join( timeStamp
-                               , "raw_data")
-    else:
-        outfile = "MouseK" + sys.argv[1] + "_SessionType" + sys.argv[2] + "_Session" + sys.argv[3]
-
-    saveDirec = os.path.join("/tmp", outfile)
-    if not os.path.exists(saveDirec):
-        os.makedirs(saveDirec)
-    saveDirec = os.path.join(saveDirec, timeStamp)
-
-    os.mkdir(saveDirec) #does not mkdir recursively
-
-    trialsDict = defaultdict(list)
-    profilingDict = {}
-    print ("[INFO] Saving data to " + saveDirec)
-    writeData(serialPort, saveDirec, trialsDict, profilingDict)
-    print("[INFO] The session is complete and will now terminate")
+    write_data(serialPort, args)
     serialPort.close()
+    #if len(sys.argv) <= 1:
+    #    outfile = os.path.join( timeStamp
+    #                           , "raw_data")
+    #else:
+    #    outfile = "MouseK" + sys.argv[1] + "_SessionType" + sys.argv[2] + "_Session" + sys.argv[3]
+
+    #saveDirec = os.path.join("/tmp", outfile)
+    #if not os.path.exists(saveDirec):
+    #    os.makedirs(saveDirec)
+    #saveDirec = os.path.join(saveDirec, timeStamp)
+
+    #os.mkdir(saveDirec) #does not mkdir recursively
+
+    #trialsDict = defaultdict(list)
+    #profilingDict = {}
+    #print ("[INFO] Saving data to " + saveDirec)
+    #writeData(serialPort, saveDirec, trialsDict, profilingDict)
+    #print("[INFO] The session is complete and will now terminate")
+    #serialPort.close()
 
 if __name__ == "__main__":
     import argparse
