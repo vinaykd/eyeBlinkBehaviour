@@ -43,18 +43,18 @@ class ExpState():
     def __init__(self):
         self.states = {}
         self.params = {}
-        self.state = 0
+        self.state = 1
 
     def get_state(self):
-        if self.state < 10:
+        if self.state >= 0 and self.state < 10:
             return "WAITING_FOR_MOUSE_INFO"
-        elif self.state < 20:
+        elif self.state >= 10 and self.state < 20:
             return "WAITING_FOR_SESSION_INFO"
-        elif self.state < 30:
+        elif self.state >= 20 and self.state < 30:
             return "WAITING_FOR_TRIAL_START"
-        elif self.state < 40:
+        elif self.state >= 30 and self.state < 40:
             return "WAITING_FOR_TRIAL_END"
-        elif self.state < 50:
+        elif self.state >= 40 and self.state < 50:
             return "START_WRITE_TRIAL_FILE"
         else:
             return "UNKNOWN_STATE"
@@ -99,13 +99,9 @@ class ExpState():
                         args_['data_dir']
                         , "Trial" + "_".join(self.params['trial']) + ".csv"
                         )
-                # In lieu of current line, add a header to csv file. We need to
-                # write all data starting next line on. We achieve this by
-                # setting the sate value after writing this line.
                 self.write_to_trial_file("timestamp,data\n")
-                if self.state == 30:
-                    self.write_to_trial_file(line)
                 self.state = 30
+            return None
 
         if self.get_state() == "WAITING_FOR_TRIAL_END":
             endPat = re.compile(r'Blink\s*Count\s*=\s*(?P<num>\d+)')
@@ -114,6 +110,12 @@ class ExpState():
                 inform_user("Trial Ends. Total blinks: %s" % m.group('num'))
                 inform_user("Wrote trial file: %s" % self.params['trial_file'])
                 self.state = 20
+            else:
+                # In lieu of current line, add a header to csv file. We need
+                # to write all data starting next line on. We achieve this
+                # by setting the sate value after writing this line.
+                self.write_to_trial_file(line)
+        return None
 
     def write_to_trial_file(self, line):
         global args_
@@ -123,6 +125,8 @@ class ExpState():
                 )
         with open(trialFile, "a") as f:
             f.write("%s\n" % line)
+            print('+', end='')
+            sys.stdout.flush()
 
     def insert_line(self, line):
         self.update_state(line)
