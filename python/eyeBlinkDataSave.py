@@ -69,7 +69,8 @@ class ExpState():
             m = mousePat.search(line)
             if m:
                 self.params['mouse_name'] = m.group('name')
-                inform_user("\nGot mouse : %s" % self.params['mouse_name'])
+                print("")
+                inform_user("Got mouse : %s" % self.params['mouse_name'])
                 self.state = 10
                 return None
             else:
@@ -99,7 +100,7 @@ class ExpState():
                         args_['data_dir']
                         , "Trial" + "_".join(self.params['trial']) + ".csv"
                         )
-                self.write_to_trial_file("timestamp,data\n")
+                self.write_to_trial_file("timestamp,data")
                 self.state = 30
             return None
 
@@ -119,11 +120,9 @@ class ExpState():
 
     def write_to_trial_file(self, line):
         global args_
-        trialFile = os.path.join(
-                args_['data_dir']
-                , "_".join(self.params['trial'])
-                )
-        with open(trialFile, "a") as f:
+        if not line.strip():
+            return
+        with open(self.params['trial_file'], "a") as f:
             f.write("%s\n" % line)
             print('+', end='')
             sys.stdout.flush()
