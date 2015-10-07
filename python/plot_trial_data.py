@@ -75,7 +75,11 @@ def plot(**kwargs):
         plot_dir(d, files)
 
 def main():
-    for d, sd, fs in os.walk('.'):
+    if len(sys.argv) < 2:
+        print('USAGE: %s dirname' % sys.argv[0])
+        quit()
+    currdir = sys.argv[1]
+    for d, sd, fs in os.walk(currdir):
         for f in fs:
             if ".csv" in f:
                 files_[d].add(f)
