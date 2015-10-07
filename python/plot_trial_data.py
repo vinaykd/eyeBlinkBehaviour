@@ -15,18 +15,14 @@ def partition_data(mat):
     blinkVec, timeVec = mat[:,0], mat[:,1]
     i = 0
     result = []
-    xvec, yvec = [], []
-    for i, t in enumerate(timeVec):
-        if t == 11:
-            result.append((xvec, yvec))
-            xvec, yvec = [], []
-            xvec.append(timeVec[i])
-            yvec.append(blinkVec[i])
-        else:
-            xvec.append(timeVec[i])
-            yvec.append(blinkVec[i])
-    result.append((xvec, yvec))
-    return result[1:]
+    a = np.diff(timeVec)
+    splits = np.nonzero(a - np.abs(a))[0]
+    prev = 0
+    for s in splits:
+        result.append((timeVec[prev: s+1], blinkVec[prev: s+1]))
+        prev = s+1
+    result.append((timeVec[prev:], blinkVec[prev:]))
+    return result
 
 def plot_dir(d, files):
     data = {}
