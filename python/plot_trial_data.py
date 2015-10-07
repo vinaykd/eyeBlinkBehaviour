@@ -40,7 +40,10 @@ def plot_dir(d, files):
             print("[WARN] Failed to load %s" % filepath)
 
     for k in data:
-        plot_data(k, data[k])
+        try:
+            plot_data(k, data[k])
+        except Exception as e:
+            print("[WARN] Failed to plot data. Error \n %s" % e)
 
 def plot_data(filepath, data):
     print("Processing %s" % filepath)
