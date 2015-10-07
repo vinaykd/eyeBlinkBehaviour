@@ -38,30 +38,32 @@ def plot_dir(d, files):
             data[filepath] = x
         except:
             print("[WARN] Failed to load %s" % filepath)
-        
-    for i, k in enumerate(data):
-        print("Processing %s" % k)
-        pylab.figure()
-        d = data[k]
-        chunks = partition_data(d)
-        length = 0
-        i = 0
-        for xv, yv in chunks:
-            i += 1
-            new_xv = [ x + length for x in xv]
-            pylab.plot(new_xv, yv, label="%s" % i)
-            length += xv[-1]
-        pylab.legend(loc='best', framealpha=0.4)
-        # baseline 
-        baseX, baseY = chunks[0]
-        baseline = np.mean(baseY)
-        std = np.std(baseY)
-        pylab.plot([0, length], [baseline, baseline])
-        pylab.plot([baseX[-1], length], [baseline+2*std]*2)
-        pylab.plot([baseX[-1], length], [baseline-2*std]*2)
-        outfile = os.path.join("%s.png" % k)
-        print("[INFO] Saving to %s" % outfile)
-        pylab.savefig(outfile)
+
+    for k in data:
+        plot_data(k, data[k])
+
+def plot_data(filepath, data):
+    print("Processing %s" % filepath)
+    pylab.figure()
+    chunks = partition_data(data)
+    length = 0
+    i = 0
+    for xv, yv in chunks:
+        i += 1
+        new_xv = [ x + length for x in xv]
+        pylab.plot(new_xv, yv, label="%s" % i)
+        length += xv[-1]
+    pylab.legend(loc='best', framealpha=0.4)
+    # baseline 
+    baseX, baseY = chunks[0]
+    baseline = np.mean(baseY)
+    std = np.std(baseY)
+    pylab.plot([0, length], [baseline, baseline])
+    pylab.plot([baseX[-1], length], [baseline+2*std]*2)
+    pylab.plot([baseX[-1], length], [baseline-2*std]*2)
+    outfile = os.path.join("%s.png" % filepath)
+    print("[INFO] Saving to %s" % outfile)
+    pylab.savefig(outfile)
 
 
 def plot(**kwargs):
