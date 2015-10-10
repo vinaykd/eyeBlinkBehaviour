@@ -48,7 +48,7 @@ def process_frame(frame):
     hullImg = np.ones(frame.shape)
     for c in cnts[0]:
         c = cv2.convexHull(c)
-        cv2.drawContours(hullImg, c, -1, 0, 1)
+        cv2.fillConvexPoly(hullImg, c, 0, 8)
 
     return frame, hullImg
 
