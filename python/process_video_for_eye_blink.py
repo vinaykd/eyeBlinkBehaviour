@@ -17,6 +17,7 @@ import cv2
 import numpy as np
 import sys
 import time
+import pylab
 
 def get_ellipse(cnts):
     ellipses = []
@@ -46,12 +47,14 @@ def process_frame(frame):
     cnts = cv2.findContours(im, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 
     hullImg = np.ones(frame.shape)
+    res = []
     for c in cnts[0]:
         c = cv2.convexHull(c)
         cv2.fillConvexPoly(hullImg, c, 0, 8)
+        res.append(cv2.contourArea(c))
 
     hullImg = np.array((1-hullImg) * 255, dtype = np.uint8)
-    return frame, hullImg
+    return frame, hullImg, sum(res)
 
 def wait_for_exit_key():
     # This continue till one presses q.
@@ -68,11 +71,10 @@ def wait_for_exit_key():
 
 def process_video(video_file_name, outFile = None,  args = {}):
     cap = cv2.VideoCapture(video_file_name)
-    out = None
     if outFile:
         print("Trying to write %s" % outFile)
         out = cv2.VideoWriter(outFile, -1, 15, (640,480))
-        print(out)
+    vec = []
     while(cap.isOpened()):
         ret, frame = cap.read()
         gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
@@ -80,16 +82,18 @@ def process_video(video_file_name, outFile = None,  args = {}):
         if args.get('bbox'):
             x0, y0, w, h = args['bbox']
             gray = gray[y0:y0+h,x0:x0+w]
-        infile, outfile = process_frame(gray)
+        infile, outfile, res = process_frame(gray)
+        vec.append(res)
         result = np.concatenate((infile, outfile), axis=1)
         cv2.imshow('Eye-Blink', result)
-        if outFile: out.write(result)
         if wait_for_exit_key():
             break
-    if outFile:
-        out.release()
-    cap.release()
     cv2.destroyAllWindows()
+    pylab.plot(vec)
+    np.savetxt("%s.csv" % video_file_name, vec, delimiter=",")
+    pylab.xlabel("Frame")
+    pylab.ylabel("Area in frame")
+    pylab.show()
 
 def main(args):
     fileName = args['video_file']
