@@ -56,9 +56,10 @@ def process_frame(frame):
 
 def process_video(video_file_name, outFile = None,  args = {}):
     cap = cv2.VideoCapture(video_file_name)
+    out = None
     if outFile:
-        fourcc = cv2.cv.CV_FOURCC('D', 'I', 'V', 'X')
-        out = cv2.VideoWriter(outFile, fourcc, 15, (640,480))
+        print("Trying to write %s" % outFile)
+        out = cv2.VideoWriter(outFile, -1, 15, (640,480))
     while(cap.isOpened()):
         ret, frame = cap.read()
         gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
@@ -69,7 +70,7 @@ def process_video(video_file_name, outFile = None,  args = {}):
         infile, outfile = process_frame(gray)
         result = np.concatenate((infile, outfile), axis=1)
         cv2.imshow('Eye-Blink', result)
-        if outFile: 
+        if out: 
             out.write(result)
 
         # This continue till one presses q.
@@ -82,6 +83,7 @@ def process_video(video_file_name, outFile = None,  args = {}):
         #    continue
         #else:
         #    print k # else print its value
+
     if outFile:
         out.release()
     cap.release()
