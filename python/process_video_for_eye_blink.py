@@ -53,6 +53,21 @@ def process_frame(frame):
     hullImg = np.array((1-hullImg) * 255, dtype = np.uint8)
     return frame, hullImg
 
+def wait_for_exit_key():
+    # This continue till one presses q.
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        return True
+    return False
+    #k = cv2.waitKey(0)
+    #if k==27:    # Esc key to stop
+    #    break
+    #elif k==-1:  # normally -1 returned,so don't print it
+    #    continue
+    #else:
+    #    print k # else print its value
+
+
+
 
 def process_video(video_file_name, outFile = None,  args = {}):
     cap = cv2.VideoCapture(video_file_name)
@@ -72,18 +87,8 @@ def process_video(video_file_name, outFile = None,  args = {}):
         cv2.imshow('Eye-Blink', result)
         if out: 
             out.write(result)
-
-        # This continue till one presses q.
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        if wait_for_exit_key():
             break
-        #k = cv2.waitKey(0)
-        #if k==27:    # Esc key to stop
-        #    break
-        #elif k==-1:  # normally -1 returned,so don't print it
-        #    continue
-        #else:
-        #    print k # else print its value
-
     if outFile:
         out.release()
     cap.release()
