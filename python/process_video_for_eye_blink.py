@@ -42,22 +42,15 @@ def process_frame(frame):
     merge_contours(cnts[0], cntImg)
 
     # cool, find the contour again and convert again. Sum up their area.
-    #im = np.array(cnt * 255, dtype = np.uint8)
-    #cnts = cv2.findContours(cntImg, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-
-    #cv2.drawContours(cntImg, cnts[0], -1, 0, 5)
-
-    ##ellipseImg = np.ones(frame.shape)
-    ##for e in get_ellipses(cnts[0]):
-    ##    cv2.ellipse(ellipseImg, e, 0)
-    ##return frame, ellipseImg 
+    im = np.array((1-cntImg) * 255, dtype = np.uint8)
+    cnts = cv2.findContours(im, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 
     hullImg = np.ones(frame.shape)
     for c in cnts[0]:
-        cv2.drawContours(hullImg, c, -1, 0, 5)
-        #cv2.fillConvexPoly(hullImg, c, 0, 8)
+        c = cv2.convexHull(c)
+        cv2.drawContours(hullImg, c, -1, 0, 1)
 
-    return frame, cntImg
+    return frame, hullImg
 
 
 def process_video(video_file_name, args):
