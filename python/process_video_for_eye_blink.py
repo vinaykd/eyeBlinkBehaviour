@@ -16,10 +16,48 @@ __status__           = "Development"
 import cv2
 import numpy as np
 import sys
+import time
+
+def get_ellipse(cnts):
+    ellipses = []
+    for cnt in cnts[0]:
+        try:
+            e = cv2.fitEllipse(cnt)
+            ellipses.append(e)
+        except: pass
+    return ellipses
+
+def merge_contours(cnts, img):
+    """Merge these contours together. And create an image"""
+    for c in cnts:
+        hull = cv2.convexHull(c)
+        cv2.fillConvexPoly(img, hull, 0)
+    return img
 
 def process_frame(frame):
-    print frame.shape
-    return frame.shape, frame
+    # Find edge in frame
+    edges = cv2.Canny(frame, 50, 250)
+    cnts = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    cntImg = np.ones(frame.shape)
+    merge_contours(cnts[0], cntImg)
+
+    # cool, find the contour again and convert again. Sum up their area.
+    #im = np.array(cnt * 255, dtype = np.uint8)
+    #cnts = cv2.findContours(cntImg, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+
+    #cv2.drawContours(cntImg, cnts[0], -1, 0, 5)
+
+    ##ellipseImg = np.ones(frame.shape)
+    ##for e in get_ellipses(cnts[0]):
+    ##    cv2.ellipse(ellipseImg, e, 0)
+    ##return frame, ellipseImg 
+
+    hullImg = np.ones(frame.shape)
+    for c in cnts[0]:
+        cv2.drawContours(hullImg, c, -1, 0, 5)
+        #cv2.fillConvexPoly(hullImg, c, 0, 8)
+
+    return frame, cntImg
 
 
 def process_video(video_file_name, args):
@@ -32,9 +70,15 @@ def process_video(video_file_name, args):
             x0, y0, w, h = args['bbox']
             gray = gray[y0:y0+h,x0:x0+w]
         res, retFrame = process_frame(gray)
-        cv2.imshow('frame', retFrame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        cv2.imshow('raw_data', gray)
+        cv2.imshow('prcessed', retFrame)
+        k = cv2.waitKey(0)
+        if k==27:    # Esc key to stop
             break
+        elif k==-1:  # normally -1 returned,so don't print it
+            continue
+        else:
+            print k # else print its value
     cap.release()
     cv2.destroyAllWindows()
 
