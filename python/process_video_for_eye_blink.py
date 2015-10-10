@@ -69,11 +69,8 @@ def wait_for_exit_key():
     #else:
     #    print k # else print its value
 
-def process_video(video_file_name, outFile = None,  args = {}):
+def process_video(video_file_name,  args = {}):
     cap = cv2.VideoCapture(video_file_name)
-    if outFile:
-        print("Trying to write %s" % outFile)
-        out = cv2.VideoWriter(outFile, -1, 15, (640,480))
     vec = []
     while(cap.isOpened()):
         ret, frame = cap.read()
@@ -97,8 +94,7 @@ def process_video(video_file_name, outFile = None,  args = {}):
 
 def main(args):
     fileName = args['video_file']
-    out = '%s_output.avi' % fileName
-    process_video(fileName, outFile = out, args = args)
+    process_video(fileName, args = args)
 
 if __name__ == '__main__':
     import argparse
