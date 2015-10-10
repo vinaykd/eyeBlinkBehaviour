@@ -66,15 +66,13 @@ def wait_for_exit_key():
     #else:
     #    print k # else print its value
 
-
-
-
 def process_video(video_file_name, outFile = None,  args = {}):
     cap = cv2.VideoCapture(video_file_name)
     out = None
     if outFile:
         print("Trying to write %s" % outFile)
         out = cv2.VideoWriter(outFile, -1, 15, (640,480))
+        print(out)
     while(cap.isOpened()):
         ret, frame = cap.read()
         gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
@@ -85,8 +83,7 @@ def process_video(video_file_name, outFile = None,  args = {}):
         infile, outfile = process_frame(gray)
         result = np.concatenate((infile, outfile), axis=1)
         cv2.imshow('Eye-Blink', result)
-        if out: 
-            out.write(result)
+        if outFile: out.write(result)
         if wait_for_exit_key():
             break
     if outFile:
