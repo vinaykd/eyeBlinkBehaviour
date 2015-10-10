@@ -50,11 +50,15 @@ def process_frame(frame):
         c = cv2.convexHull(c)
         cv2.fillConvexPoly(hullImg, c, 0, 8)
 
+    hullImg = np.array((1-hullImg) * 255, dtype = np.uint8)
     return frame, hullImg
 
 
-def process_video(video_file_name, args):
+def process_video(video_file_name, outFile = None,  args = {}):
     cap = cv2.VideoCapture(video_file_name)
+    if outFile:
+        fourcc = cv2.cv.CV_FOURCC('D', 'I', 'V', 'X')
+        out = cv2.VideoWriter(outFile, fourcc, 15, (640,480))
     while(cap.isOpened()):
         ret, frame = cap.read()
         gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
@@ -62,22 +66,31 @@ def process_video(video_file_name, args):
         if args.get('bbox'):
             x0, y0, w, h = args['bbox']
             gray = gray[y0:y0+h,x0:x0+w]
-        res, retFrame = process_frame(gray)
-        cv2.imshow('raw_data', gray)
-        cv2.imshow('prcessed', retFrame)
-        k = cv2.waitKey(0)
-        if k==27:    # Esc key to stop
+        infile, outfile = process_frame(gray)
+        result = np.concatenate((infile, outfile), axis=1)
+        cv2.imshow('Eye-Blink', result)
+        if outFile: 
+            out.write(result)
+
+        # This continue till one presses q.
+        if cv2.waitKey(1) & 0xFF == ord('q'):
             break
-        elif k==-1:  # normally -1 returned,so don't print it
-            continue
-        else:
-            print k # else print its value
+        #k = cv2.waitKey(0)
+        #if k==27:    # Esc key to stop
+        #    break
+        #elif k==-1:  # normally -1 returned,so don't print it
+        #    continue
+        #else:
+        #    print k # else print its value
+    if outFile:
+        out.release()
     cap.release()
     cv2.destroyAllWindows()
 
 def main(args):
     fileName = args['video_file']
-    process_video(fileName, args)
+    out = '%s_output.avi' % fileName
+    process_video(fileName, outFile = out, args = args)
 
 if __name__ == '__main__':
     import argparse
