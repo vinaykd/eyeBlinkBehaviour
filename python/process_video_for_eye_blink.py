@@ -18,6 +18,22 @@ import numpy as np
 import sys
 import time
 import pylab
+import logging
+
+logging.basicConfig(level=logging.DEBUG,
+    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+    datefmt='%m-%d %H:%M',
+    filename='default.log',
+    filemode='w')
+console = logging.StreamHandler()
+console.setLevel(logging.INFO)
+formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+console.setFormatter(formatter)
+_logger = logging.getLogger('blinky')
+_logger.addHandler(console)
+
+max_length_ = 80
+current_length_ = 0
 
 def get_ellipse(cnts):
     ellipses = []
@@ -34,6 +50,21 @@ def merge_contours(cnts, img):
         hull = cv2.convexHull(c)
         cv2.fillConvexPoly(img, hull, 0)
     return img
+
+def draw_stars(current, max_lim):
+    """Draw starts onto console as progress bar. Only if there is any change in
+    length.
+    """
+    global current_length_, max_length_
+    stride = int( max_lim / float(max_length_)) 
+    steps = int(current / float(stride))
+    if steps == current_length_:
+        return
+    current_length_ = steps
+    msg = "".join([ '*' for x in range(steps) ] + 
+            ['|' for x in range(max_length_-steps)]
+            )
+    print(msg)
 
 def process_frame(frame):
     # Find edge in frame
@@ -71,7 +102,13 @@ def wait_for_exit_key():
 
 def process_video(video_file_name,  args = {}):
     cap = cv2.VideoCapture(video_file_name)
+    totalFrames = cap.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT)
+    _logger.info("Total frames: %s" % totalFrames)
+    fps = cap.get(cv2.cv.CV_CAP_PROP_FPS)
+    _logger.info("| FPS: %s" % fps)
     vec = []
+    tvec = []
+    nFrames = 0
     while(cap.isOpened()):
         ret, frame = cap.read()
         gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
@@ -80,15 +117,18 @@ def process_video(video_file_name,  args = {}):
             x0, y0, w, h = args['bbox']
             gray = gray[y0:y0+h,x0:x0+w]
         infile, outfile, res = process_frame(gray)
+        nFrames += 1.0
+        draw_stars(nFrames, totalFrames)
+        tvec.append(nFrames/fps)
         vec.append(res)
         result = np.concatenate((infile, outfile), axis=1)
         cv2.imshow('Eye-Blink', result)
         if wait_for_exit_key():
             break
     cv2.destroyAllWindows()
-    pylab.plot(vec)
+    pylab.plot(tvec, vec)
     np.savetxt("%s.csv" % video_file_name, vec, delimiter=",")
-    pylab.xlabel("Frame")
+    pylab.xlabel("Time (sec)")
     pylab.ylabel("Area in frame")
     pylab.show()
 
