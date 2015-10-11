@@ -1,6 +1,7 @@
 """process_video_for_eye_blink.py: 
 
-    Detects eye blink in video
+Extract a csv file out of video file.
+
 
 """
     
@@ -135,8 +136,7 @@ def process_video(video_file_name,  args = {}):
         if wait_for_exit_key():
             break
     cv2.destroyAllWindows()
-    stamp = datetime.datetime.now().isoformat()
-    outfile = "%s_%s.csv" % (video_file_name, stamp)
+    outfile = "%s_out.csv" % (video_file_name)
     _logger.info("Writing to %s" % outfile)
     np.savetxt(outfile, np.array((tvec, vec)).T, delimiter=",", header = "time,area")
 
