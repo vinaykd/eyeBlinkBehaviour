@@ -1,7 +1,5 @@
-"""process_video_for_eye_blink.py: 
-
-Extract a csv file out of video file.
-
+"""
+Extract a csv file out of video file representing eye blinks.
 
 """
     
