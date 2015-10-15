@@ -19,7 +19,7 @@ from collections import defaultdict
 
 result_ = defaultdict(list)
 pretoneN_ = 500
-blinkResponseInterval_ = pretoneN_ + 60
+blinkResponseInterval_ = pretoneN_ + 50
 
 
 def get_status(i, filename, dirname):
@@ -43,15 +43,22 @@ def process(filename, dirname):
 
         pretoneData = d[:pretoneN_]
         mean, std = np.mean(pretoneData), np.std(pretoneData)
-        threshold = mean + 2*std
+        threshold = mean + 10*std
         crData = d[pretoneN_:blinkResponseInterval_]
-        if crData.max() >= threshold:
+        crr = 0.5*(crData + np.fabs(crData))
+        #pylab.plot(crr)
+        result_['weight'].append(crr.max())
+        if crr.max() >= threshold:
             result_['blink'].append(1)
         else:
             result_['blink'].append(0)
+
     print result_['blink']
+    pylab.subplot(2, 1, 1)
     pylab.plot(result_['blink'], 'o')
     pylab.ylim(-0.1, 1.1)
+    pylab.subplot(2, 1, 2)
+    pylab.plot(result_['weight'], '*')
     pylab.title("Blink in Blink Response Interval. 1 : Present, 0 : Absent")
     pylab.show()
 
